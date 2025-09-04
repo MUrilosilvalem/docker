@@ -1,8 +1,14 @@
+# Usamos a imagem oficial como base
 FROM novosga/novosga:2.2.7
 
-#Set the default parameters
+# Argumento que será recebido do EasyPanel durante o build
+ARG VITE_MERCURE_URL
+
+# Variáveis de ambiente
 ENV APP_ENV=prod \
     LANGUAGE=pt_BR \
+    # A variável VITE_MERCURE_URL do build é passada para o ambiente
+    VITE_MERCURE_URL=${VITE_MERCURE_URL} \
     NOVOSGA_ADMIN_USERNAME="admin" \
     NOVOSGA_ADMIN_PASSWORD="123456" \
     NOVOSGA_ADMIN_FIRSTNAME="Administrador" \
@@ -15,9 +21,10 @@ ENV APP_ENV=prod \
     NOVOSGA_PRIORITY_DESCRIPTION="Serviço prioritário" \
     NOVOSGA_PLACE_NAME="Guichê"
 
+# Mudamos para o usuário root para poder instalar pacotes e alterar permissões
 USER root
 
-# https://github.com/aptible/supercronic/releases/tag/v0.2.33
+# Instala o supercronic para agendamento de tarefas
 ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.33/supercronic-linux-amd64 \
     SUPERCRONIC_SHA1SUM=71b0d58cc53f6bd72cf2f293e09e294b79c666d8 \
     SUPERCRONIC=supercronic-linux-amd64
@@ -28,10 +35,23 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
     && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
     && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
 
-COPY start.sh /usr/local/bin
+# --- INÍCIO DA CORREÇÃO ---
+# Força a reconstrução dos assets do frontend durante o build.
+# Este comando irá ler a VITE_MERCURE_URL injetada acima e "queimá-la" nos arquivos JS/HTML.
+RUN echo "Rebuilding frontend assets with VITE_MERCURE_URL=${VITE_MERCURE_URL}" && \
+    /app/bin/console vite:build
+# --- FIM DA CORREÇÃO ---
+
+# Copia os arquivos de configuração e o script de inicialização
+COPY start.sh /usr/local/bin/
 COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY config/crontab /etc/crontab
 
+# Garante que o script de inicialização seja executável
+RUN chmod +x /usr/local/bin/start.sh
+
+# Muda para um usuário não-privilegiado por segurança
 USER nobody
 
+# Define o comando padrão para iniciar a aplicação
 CMD ["start.sh"]
