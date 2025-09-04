@@ -9,6 +9,7 @@ if [ -z "$DATABASE_URL" ]; then
 fi
 echo "Ok"
 
+# Limpa e aquece o cache do backend
 bin/console cache:clear --no-debug --no-warmup
 bin/console cache:warmup
 
@@ -24,6 +25,12 @@ set -xe
 
 # Install/Updates the database schema
 bin/console novosga:install
+
+# --- INÍCIO DA CORREÇÃO ---
+# Reinstala os assets para forçar a leitura das variáveis de ambiente (VITE_*) pelo frontend
+echo "Rebuilding assets to inject environment variables..."
+bin/console assets:install public
+# --- FIM DA CORREÇÃO ---
 
 echo "Setup done! Starting application"
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
