@@ -36,8 +36,9 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
 
 # --- INÍCIO DA CORREÇÃO ---
 # Força a reconstrução dos assets do frontend durante o build, usando o caminho correto.
+# O WORKDIR da imagem é /var/www/html, então o console está lá dentro.
 RUN echo "Rebuilding frontend assets with VITE_MERCURE_URL=${VITE_MERCURE_URL}" && \
-    /usr/src/novosga/bin/console vite:build
+    /var/www/html/bin/console vite:build
 # --- FIM DA CORREÇÃO ---
 
 # Copia os arquivos de configuração e o script de inicialização
