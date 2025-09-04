@@ -7,7 +7,6 @@ ARG VITE_MERCURE_URL
 # Variáveis de ambiente
 ENV APP_ENV=prod \
     LANGUAGE=pt_BR \
-    # A variável VITE_MERCURE_URL do build é passada para o ambiente
     VITE_MERCURE_URL=${VITE_MERCURE_URL} \
     NOVOSGA_ADMIN_USERNAME="admin" \
     NOVOSGA_ADMIN_PASSWORD="123456" \
@@ -36,10 +35,9 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
     && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
 
 # --- INÍCIO DA CORREÇÃO ---
-# Força a reconstrução dos assets do frontend durante o build.
-# Este comando irá ler a VITE_MERCURE_URL injetada acima e "queimá-la" nos arquivos JS/HTML.
+# Força a reconstrução dos assets do frontend durante o build, usando o caminho correto.
 RUN echo "Rebuilding frontend assets with VITE_MERCURE_URL=${VITE_MERCURE_URL}" && \
-    /app/bin/console vite:build
+    /usr/src/novosga/bin/console vite:build
 # --- FIM DA CORREÇÃO ---
 
 # Copia os arquivos de configuração e o script de inicialização
